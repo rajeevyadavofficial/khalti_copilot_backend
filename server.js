@@ -133,7 +133,27 @@ app.delete('/api/questions', async (req, res) => {
     }
 });
 
+// Keep-awake self-ping every 10 minutes (600,000 ms)
+const PING_INTERVAL_MS = 10 * 60 * 1000;
+const SERVER_URL = process.env.RENDER_EXTERNAL_URL || 'https://khalti-copilot-backend.onrender.com';
+
+function startKeepAwake() {
+    const https = require('https');
+    setInterval(() => {
+        try {
+            https.get(SERVER_URL, (res) => {
+                console.log(`[Keep-Awake Ping] Self-ping status: ${res.statusCode} at ${new Date().toISOString()}`);
+            }).on('error', (err) => {
+                console.warn(`[Keep-Awake Ping Warning]: ${err.message}`);
+            });
+        } catch (e) {
+            console.error('[Keep-Awake Error]:', e);
+        }
+    }, PING_INTERVAL_MS);
+}
+
 app.listen(PORT, () => {
     console.log(`Khalti Copilot backend running on port ${PORT}`);
     getCollection().catch(err => console.error('Initial MongoDB connection error:', err));
+    startKeepAwake();
 });
