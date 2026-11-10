@@ -48,11 +48,11 @@ app.post('/api/questions', async (req, res) => {
             key,
             question_text,
             correct_answer,
+            category,
             gemini_suggested,
             gemini_was_correct,
             times_seen,
-            confidence,
-            screenshot_url
+            confidence
         } = req.body;
 
         if (!key || !question_text) {
@@ -64,16 +64,16 @@ app.post('/api/questions', async (req, res) => {
             _id: key,
             question_text: question_text.trim(),
             correct_answer: correct_answer || '',
+            category: category || 'Free Quiz',
             gemini_suggested: gemini_suggested || '',
             gemini_was_correct: !!gemini_was_correct,
             times_seen: typeof times_seen === 'number' ? times_seen : 1,
-            confidence: confidence || 'LOW',
-            screenshot_url: screenshot_url || '',
+            confidence: confidence || 'HIGH',
             last_updated: new Date()
         };
 
         const result = await col.replaceOne({ _id: key }, doc, { upsert: true });
-        console.log(`Saved question: ${key} (matched: ${result.matchedCount}, upserted: ${result.upsertedCount})`);
+        console.log(`Saved question [${doc.category}]: ${key} (matched: ${result.matchedCount}, upserted: ${result.upsertedCount})`);
 
         res.json({ success: true, key, doc });
     } catch (err) {
@@ -82,11 +82,15 @@ app.post('/api/questions', async (req, res) => {
     }
 });
 
-// Get All Questions
+// Get All Questions (optionally filtered by ?category=...)
 app.get('/api/questions', async (req, res) => {
     try {
         const col = await getCollection();
-        const questions = await col.find().sort({ last_updated: -1 }).toArray();
+        const filter = {};
+        if (req.query.category) {
+            filter.category = req.query.category;
+        }
+        const questions = await col.find(filter).sort({ last_updated: -1 }).toArray();
         res.json({ success: true, count: questions.length, questions });
     } catch (err) {
         console.error('Error fetching questions:', err);
