@@ -47,6 +47,7 @@ app.post('/api/questions', async (req, res) => {
         const {
             key,
             question_text,
+            options,
             correct_answer,
             category,
             gemini_suggested,
@@ -63,6 +64,7 @@ app.post('/api/questions', async (req, res) => {
         const doc = {
             _id: key,
             question_text: question_text.trim(),
+            options: options || {},
             correct_answer: correct_answer || '',
             category: category || 'Free Quiz',
             gemini_suggested: gemini_suggested || '',
